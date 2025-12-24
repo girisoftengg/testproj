@@ -1,9 +1,9 @@
 name: Deploy Lambda Code
 
 on:
-  push:
-    branches:
-      - main  # Trigger when code changes are pushed to the main branch
+  #push:
+   # branches:
+    #  - main  # Trigger when code changes are pushed to the main branch
   workflow_dispatch:   # This allows manual triggering from the GitHub UI
 
 jobs:
@@ -27,12 +27,12 @@ jobs:
 
       - name: Create Lambda Deployment Package
         run: |
-          zip -r lambda.zip lambda/
-          aws s3 cp lambda.zip s3://storagetest2025/lambda.zip
+          zip -r lambda_code.zip lambda/
+          aws s3 cp lambda_code.zip s3://strbucket202512/lambda_code.zip
 
       - name: Trigger Lambda Update (Optional)
         run: |
           aws lambda update-function-code \
             --function-name "lambda_s3_trigger" \
-            --s3-bucket "storagetest2025" \
-            --s3-key "lambda.zip"
+            --s3-bucket "strbucket202512" \
+            --s3-key "lambda_code.zip"
