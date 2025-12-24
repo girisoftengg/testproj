@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "example_bucket" {
-  bucket = "test-bucket-trigger"  # Replace with your unique bucket name
+  bucket = "strbucket202512"  # Replace with your unique bucket name
 }
 
 resource "aws_iam_role" "lambda_execution_role" {
@@ -82,4 +82,5 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
