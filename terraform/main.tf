@@ -7,6 +7,9 @@ resource "aws_s3_bucket" "example_bucket" {
   bucket = "strbucket202512"
 }
 
+# Declare the aws_caller_identity data source to get account ID
+data "aws_caller_identity" "current" {}
+
 # IAM role for Lambda execution
 resource "aws_iam_role" "lambda_execution_role" {
   name = "lambda_s3_trigger_role"
@@ -109,5 +112,6 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
