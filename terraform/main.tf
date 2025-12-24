@@ -9,6 +9,11 @@ variable "aws_region" {
   default     = "us-east-1"  # You can change this default or pass it explicitly when running terraform apply
 }
 
+# Get existing CloudWatch Log Group "app/logs/check"
+resource "aws_cloudwatch_log_group" "existing_log_group" {
+  name = "/aws-glue/jobs/logs-v2"
+}
+
 # Create an S3 Bucket to store the Lambda code
 resource "aws_s3_bucket" "example_bucket" {
   bucket = "strbucket202512"
@@ -50,7 +55,7 @@ resource "aws_iam_policy" "lambda_logs_policy" {
           "logs:PutLogEvents"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws-glue/jobs/logs-v2:*"
       }
     ]
   })
@@ -119,6 +124,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
