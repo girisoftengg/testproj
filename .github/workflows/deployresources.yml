@@ -28,10 +28,10 @@ jobs:
           terraform_version: "1.0.11"  # Or whatever version you prefer
 
       - name: Terraform Init
-        run: terraform init terraform/
+        run: terraform -chdir=terraform init  # Corrected Terraform init command
 
       - name: Terraform Plan
-        run: terraform plan terraform/
+        run: terraform -chdir=terraform plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve terraform/
+        run: terraform -chdir=terraform apply -auto-approve
