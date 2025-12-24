@@ -2,6 +2,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Declare the aws_region variable
+variable "aws_region" {
+  description = "The AWS region to deploy resources in"
+  type        = string
+  default     = "us-east-1"  # You can change this default or pass it explicitly when running terraform apply
+}
+
 # Create an S3 Bucket to store the Lambda code
 resource "aws_s3_bucket" "example_bucket" {
   bucket = "strbucket202512"
@@ -112,6 +119,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
