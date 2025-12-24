@@ -9,6 +9,18 @@ variable "aws_region" {
   default     = "us-east-1"  # You can change this default or pass it explicitly when running terraform apply
 }
 
+# Define provider and region
+provider "aws" {
+  region = "us-west-2"  # Change this to your region
+}
+
+# Define S3 Bucket name as a variable
+variable "s3_bucket_name" {
+  description = "The name of the S3 bucket"
+  type        = string
+  default     = "strbucket202512"  # Set a default value or override during `terraform apply`
+}
+
 # Get existing CloudWatch Log Group "app/logs/check"
 resource "aws_cloudwatch_log_group" "existing_log_group" {
   name = "/aws-glue/jobs/logs-v2"
@@ -19,10 +31,7 @@ resource "aws_s3_bucket" "example_bucket" {
   bucket = "strbucket202512"
 }
 
-# Declare the aws_caller_identity data source to get account ID
-data "aws_caller_identity" "current" {}
-
-# IAM role for Lambda execution
+# Lambda Execution Role with S3 and CloudWatch Logs permissions
 resource "aws_iam_role" "lambda_execution_role" {
   name = "lambda_s3_trigger_role"
 
@@ -40,32 +49,45 @@ resource "aws_iam_role" "lambda_execution_role" {
   })
 }
 
-# CloudWatch Logs Policy for Lambda
-resource "aws_iam_policy" "lambda_logs_policy" {
-  name        = "lambda_logs_policy"
-  description = "Allow Lambda to write logs to CloudWatch"
+# Attach both CloudWatch Logs and S3 permissions policy to Lambda execution role
+resource "aws_iam_policy" "lambda_permissions_policy" {
+  name        = "lambda_permissions_policy"
+  description = "Allow Lambda to access S3 and write logs to CloudWatch"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # CloudWatch Logs Permissions
       {
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
+        Action   = [
+          "logs:CreateLogStream",  # Allows Lambda to create log streams
+          "logs:PutLogEvents"      # Allows Lambda to write log events
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws-glue/jobs/logs-v2:*"
+        Resource = data.aws_cloudwatch_log_group.existing_log_group.arn
+      },
+      # S3 Permissions
+      {
+        Action   = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "arn:aws:s3:::${var.s3_bucket_name}/*",  # Dynamically use the bucket name
+          "arn:aws:s3:::${var.s3_bucket_name}"
+        ]
       }
     ]
   })
 }
 
-# Attach CloudWatch Logs policy to Lambda execution role
-resource "aws_iam_role_policy_attachment" "lambda_logs_policy_attachment" {
+# Attach the combined policy to Lambda execution role
+resource "aws_iam_role_policy_attachment" "lambda_permissions_policy_attachment" {
   role       = aws_iam_role.lambda_execution_role.name
-  policy_arn = aws_iam_policy.lambda_logs_policy.arn
+  policy_arn = aws_iam_policy.lambda_permissions_policy.arn
 }
+
 # Create the .zip file from lambda.py in the src directory
 data "archive_file" "lambda_zip" {
   type        = "zip"
@@ -86,12 +108,12 @@ resource "aws_s3_object" "lambda_code" {
 resource "aws_lambda_function" "lambda_s3_trigger" {
   function_name = "lambda_s3_trigger"
   role          = aws_iam_role.lambda_execution_role.arn
-  handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.8"
-  s3_bucket     = aws_s3_bucket.example_bucket.bucket
+  handler       = "lambda_function.lambda_handler" # Make sure this matches your Lambda code's entry point
+  runtime       = "python3.8" # Adjust runtime if necessary
+  s3_bucket     = aws_s3_bucket.example_bucket.bucket # Use the variable for the S3 bucket name
   s3_key        = "lambda_code.zip"  # Assuming the Lambda code is already uploaded
 
-  depends_on = [aws_s3_bucket.example_bucket]
+  depends_on = [aws_iam_role_policy_attachment.lambda_permissions_policy_attachment]
 }
 
 # Add permission for S3 to trigger the Lambda function
@@ -109,7 +131,8 @@ resource "aws_s3_bucket_notification" "s3_event_trigger" {
 
   lambda_function {
     events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".txt"  # Trigger only on .txt files
+    # Remove or comment the next line to accept all formats (no filtering)
+    # filter_suffix      = ".txt"  # This line is now removed for all formats
     lambda_function_arn = aws_lambda_function.lambda_s3_trigger.arn
   }
 
@@ -124,6 +147,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
