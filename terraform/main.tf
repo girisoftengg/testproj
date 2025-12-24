@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "United States (N. Virginia)"  # Change region if needed
+  region = "us-east-1"  # Correct region code for N. Virginia
 }
 
 resource "aws_s3_bucket" "example_bucket" {
@@ -82,3 +82,4 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
