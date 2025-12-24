@@ -9,11 +9,6 @@ variable "aws_region" {
   default     = "us-east-1"  # You can change this default or pass it explicitly when running terraform apply
 }
 
-# Define provider and region
-provider "aws" {
-  region = "us-west-2"  # Change this to your region
-}
-
 # Define S3 Bucket name as a variable
 variable "s3_bucket_name" {
   description = "The name of the S3 bucket"
@@ -147,6 +142,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
