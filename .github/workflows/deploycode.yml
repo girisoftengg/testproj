@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Trigger when code changes are pushed to the main branch
+  workflow_dispatch:   # This allows manual triggering from the GitHub UI
 
 jobs:
   deploy_lambda_code:
