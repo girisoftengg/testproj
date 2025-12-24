@@ -16,9 +16,12 @@ variable "s3_bucket_name" {
   default     = "strbucket202512"  # Set a default value or override during `terraform apply`
 }
 
-# Get existing CloudWatch Log Group "app/logs/check"
-resource "aws_cloudwatch_log_group" "existing_log_group" {
-  name = "/aws-glue/jobs/logs-v2"
+# Get existing CloudWatch Log Group
+#resource "aws_cloudwatch_log_group" "existing_log_group" {
+#  name = "/aws-glue/jobs/logs-v2"
+#}
+data "aws_cloudwatch_log_group" "existing_log_group" {
+  log_group_name = "/aws/glue/jobs/logs-v2"  # Replace with your existing log group name
 }
 
 # Create an S3 Bucket to store the Lambda code
@@ -142,6 +145,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
