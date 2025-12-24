@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Trigger on pushes to the main branch
+  workflow_dispatch:   # This allows manual triggering from the GitHub UI
 
 jobs:
   terraform:
@@ -19,7 +20,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: "us-west-2"  # Change to your desired region
+          aws-region: "United States (N. Virginia)"  # Change to your desired region
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
