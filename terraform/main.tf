@@ -54,7 +54,7 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
 # Create the .zip file from lambda.py in the src directory
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/lambada"    # Directory containing lambda.py
+  source_dir  = "${path.module}/../lambada"    # Directory containing lambda.py
   output_path = "lambda_code.zip"  # The output .zip file
 }
 
@@ -99,6 +99,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
