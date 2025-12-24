@@ -53,14 +53,14 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
 
 resource "aws_lambda_function" "lambda_s3_trigger" {
   function_name = "lambda_s3_trigger"
+  role          = aws_iam_role.lambda_execution_role.arn
+  handler       = "lambda_function.lambda_handler"
+  runtime       = "python3.8"
+  s3_bucket     = aws_s3_bucket.example_bucket.bucket  # S3 bucket to store the code (code will be deployed later)
+  # Note: We don't specify s3_key here because we want to update it later (in the second workflow)
+  # This will create a Lambda function without code
 
-  s3_bucket = "storagetest2025"  # Replace with your deployment bucket name
-  s3_key    = "lambda.zip"
-
-  handler = "lambda_function.lambda_handler"
-  runtime = "python3.8"
-
-  role = aws_iam_role.lambda_execution_role.arn
+  depends_on = [aws_s3_bucket.example_bucket]
 }
 
 resource "aws_s3_bucket_notification" "s3_event_trigger" {
@@ -82,5 +82,6 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
