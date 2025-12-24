@@ -25,6 +25,32 @@ resource "aws_iam_role" "lambda_execution_role" {
   })
 }
 
+# CloudWatch Logs Policy for Lambda
+resource "aws_iam_policy" "lambda_logs_policy" {
+  name        = "lambda_logs_policy"
+  description = "Allow Lambda to write logs to CloudWatch"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      }
+    ]
+  })
+}
+
+# Attach CloudWatch Logs policy to Lambda execution role
+resource "aws_iam_role_policy_attachment" "lambda_logs_policy_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_logs_policy.arn
+}
 # Create the .zip file from lambda.py in the src directory
 data "archive_file" "lambda_zip" {
   type        = "zip"
@@ -83,4 +109,5 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
