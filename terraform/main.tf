@@ -51,13 +51,32 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_s3_policy.arn
 }
 
+# Create the .zip file from lambda.py in the src directory
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_dir  = "{path.module}/../lambada/lambda_function.py"    # Directory containing lambda.py
+  output_path = "lambda_code.zip"  # The output .zip file
+}
+
+# Upload Lambda .zip code to S3
+resource "aws_s3_object" "lambda_code" {
+  bucket = aws_s3_bucket.example_bucket.bucket
+  key    = "lambda_code.zip"
+  source = data.archive_file.lambda_zip.output_path  # Path to the .zip file created by archive_file
+
+  depends_on = [aws_s3_bucket.example_bucket]  # Ensure the S3 bucket is created first
+}
+
 resource "aws_lambda_function" "lambda_s3_trigger" {
   function_name = "lambda_s3_trigger"
   role          = aws_iam_role.lambda_execution_role.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
-  # No code is provided. We are not specifying `s3_bucket` or `zip_file` here.
-  # This Lambda function is created without any code. It will be empty for now.
+
+  # Deploy code from the .zip file uploaded to S3
+  s3_bucket     = aws_s3_bucket.example_bucket.bucket
+  s3_key        = aws_s3_object.lambda_code.key
+
   depends_on = [aws_s3_bucket.example_bucket]
 }
 
@@ -80,6 +99,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
