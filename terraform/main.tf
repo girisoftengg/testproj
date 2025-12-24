@@ -1,54 +1,28 @@
 provider "aws" {
-  region = "us-east-1"  # Correct region code for N. Virginia
+  region = var.aws_region
 }
 
+# Create an S3 Bucket to store the Lambda code
 resource "aws_s3_bucket" "example_bucket" {
-  bucket = "strbucket202512"  # Replace with your unique bucket name
+  bucket = "strbucket202512"
 }
 
+# IAM role for Lambda execution
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role"
+  name = "lambda_s3_trigger_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "lambda.amazonaws.com"
         }
-        Effect    = "Allow"
-        Sid       = ""
-      }
+      },
     ]
   })
-}
-
-resource "aws_iam_policy" "lambda_s3_policy" {
-  name        = "lambda_s3_policy"
-  description = "Allow Lambda to access S3"
-  
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action   = [
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Effect   = "Allow"
-        Resource = [
-          "${aws_s3_bucket.example_bucket.arn}/*",
-          "${aws_s3_bucket.example_bucket.arn}"
-        ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
-  role       = aws_iam_role.lambda_execution_role.name
-  policy_arn = aws_iam_policy.lambda_s3_policy.arn
 }
 
 # Create the .zip file from lambda.py in the src directory
@@ -67,31 +41,41 @@ resource "aws_s3_object" "lambda_code" {
   depends_on = [aws_s3_bucket.example_bucket]  # Ensure the S3 bucket is created first
 }
 
+# Create Lambda function
 resource "aws_lambda_function" "lambda_s3_trigger" {
   function_name = "lambda_s3_trigger"
   role          = aws_iam_role.lambda_execution_role.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
-
-  # Deploy code from the .zip file uploaded to S3
   s3_bucket     = aws_s3_bucket.example_bucket.bucket
-  s3_key        = aws_s3_object.lambda_code.key
+  s3_key        = "lambda_code.zip"  # Assuming the Lambda code is already uploaded
 
   depends_on = [aws_s3_bucket.example_bucket]
 }
 
+# Add permission for S3 to trigger the Lambda function
+resource "aws_lambda_permission" "allow_s3_trigger" {
+  statement_id  = "AllowS3Trigger"
+  action        = "lambda:InvokeFunction"
+  principal     = "s3.amazonaws.com"
+  function_name = aws_lambda_function.lambda_s3_trigger.function_name
+  source_arn    = aws_s3_bucket.example_bucket.arn
+}
+
+# Create S3 notification to trigger Lambda function
 resource "aws_s3_bucket_notification" "s3_event_trigger" {
   bucket = aws_s3_bucket.example_bucket.id
 
   lambda_function {
-    events     = ["s3:ObjectCreated:*"]
-    filter_suffix = ".txt"  # Optional: trigger only on .txt files
+    events              = ["s3:ObjectCreated:*"]
+    filter_suffix       = ".txt"  # Trigger only on .txt files
     lambda_function_arn = aws_lambda_function.lambda_s3_trigger.arn
   }
 
-  depends_on = [aws_lambda_function.lambda_s3_trigger]
+  depends_on = [aws_lambda_function.lambda_s3_trigger, aws_lambda_permission.allow_s3_trigger]
 }
 
+# Outputs
 output "lambda_function_name" {
   value = aws_lambda_function.lambda_s3_trigger.function_name
 }
@@ -99,12 +83,3 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
-
-
-
-
-
-
-
-
-
