@@ -57,14 +57,7 @@ resource "aws_lambda_function" "lambda_s3_trigger" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   s3_bucket     = aws_s3_bucket.example_bucket.bucket  # S3 bucket to store the code (code will be deployed later)
-  # Inline code just to create the function
-  code {
-    zip_file = <<ZIP
-      def lambda_handler(event, context):
-          print("Lambda function created successfully!")
-    ZIP
-  }
-
+  s3_key        = "lambda_code_placeholder.zip"  # This is a placeholder; no code will be deployed yet
   depends_on = [aws_s3_bucket.example_bucket]
 }
 
@@ -87,6 +80,7 @@ output "lambda_function_name" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.example_bucket.bucket
 }
+
 
 
 
