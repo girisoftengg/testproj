@@ -27,7 +27,8 @@ jobs:
 
       - name: Create Lambda Deployment Package
         run: |
-          zip -r lambda_code.zip
+          zip -r lambda_code.zip lambada/ # Zipping the entire lambada folder and its contents
+           # Upload the zipped Lambda code to S3
           aws s3 cp lambda_code.zip s3://strbucket202512/lambda_code.zip
 
       - name: Trigger Lambda Update (Optional)
